@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  TRAINER
+  NUTRITIONIST
+  MANAGER
+}
+
+enum SubscriptionLevel {
+  BASIC
+  VIP
+  PREMIUM
+}
+
+enum SubscriptionDuration {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum SpecialtyType {
+  TRAINER
+  NUTRITIONIST
+}
+
+// enum Specialty {
+//   // رياضة
+//   STRENGTH_TRAINING
+//   CARDIO
+//   YOGA
+//   CROSSFIT
+//   HIIT
+//   // تغذية
+//   SPORTS_NUTRITION
+//   WEIGHT_MANAGEMENT
+//   CLINICAL_NUTRITION
+//   HOLISTIC_NUTRITION
+// }
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer     Customer?
+  trainer      Trainer?
+  nutritionist Nutritionist?
+}
+
+model Customer {
+  id              Int                     @id @default(autoincrement())
+  user            User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          Int                     @unique
+  subscriptions   CustomerSubscription[]
+  enrolledPlans   CustomerNutritionPlan[]
+  attendedClasses CustomerClass[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  Attendance      Attendance[]
+}
+
+model Specialty {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  target       SpecialtyType
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Trainer      Trainer[]
+  Nutritionist Nutritionist[]
+}
+
+model Trainer {
+  id          Int       @id @default(autoincrement())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int       @unique
+  specialtyId Int
+  specialty   Specialty @relation(fields: [specialtyId], references: [id])
+  classes     Class[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Nutritionist {
+  id          Int             @id @default(autoincrement())
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int             @unique
+  specialtyId Int
+  specialty   Specialty       @relation(fields: [specialtyId], references: [id])
+  plans       NutritionPlan[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Subscription {
+  id        Int                    @id @default(autoincrement())
+  level     SubscriptionLevel
+  duration  SubscriptionDuration
+  cost      Float
+  customers CustomerSubscription[]
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+}
+
+model CustomerSubscription {
+  id             Int          @id @default(autoincrement())
+  customer       Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId     Int
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscriptionId Int
+  startDate      DateTime
+  endDate        DateTime
+  createdAt      DateTime     @default(now())
+
+  @@unique([customerId, subscriptionId])
+}
+
+model Class {
+  id          Int             @id @default(autoincrement())
+  name        String
+  schedule    Json
+  maxCapacity Int
+  trainer     Trainer         @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  trainerId   Int
+  customers   CustomerClass[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  Attendance  Attendance[]
+}
+
+model Attendance {
+  id         Int      @id @default(autoincrement())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId Int
+  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  classId    Int
+  scheduleId String
+  attendedAt DateTime @default(now())
+
+  @@unique([customerId, classId, scheduleId])
+}
+
+model CustomerClass {
+  id         Int      @id @default(autoincrement())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId Int
+  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  classId    Int
+  joinedAt   DateTime @default(now())
+
+  @@unique([customerId, classId])
+}
+
+model NutritionPlan {
+  id                Int                     @id @default(autoincrement())
+  title             String
+  planDetails       String                  @db.Text
+  nutritionist      Nutritionist            @relation(fields: [nutritionistId], references: [id], onDelete: Cascade)
+  nutritionistId    Int
+  enrolledCustomers CustomerNutritionPlan[]
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+}
+
+model CustomerNutritionPlan {
+  id            Int           @id @default(autoincrement())
+  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId    Int
+  nutritionPlan NutritionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planId        Int
+  enrolledAt    DateTime      @default(now())
+
+  @@unique([customerId, planId])
+}
