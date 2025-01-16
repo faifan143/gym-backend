@@ -245,7 +245,13 @@ export class CustomerService {
    */
   async getClasses() {
     const classes = await this.prisma.class.findMany({
-      include: { trainer: true },
+      include: {
+        trainer: {
+          include: {
+            user: true,
+          },
+        },
+      },
     });
     return classes;
   }
@@ -274,7 +280,17 @@ export class CustomerService {
 
     const classes = await this.prisma.customerClass.findMany({
       where: { customerId: customer.id },
-      include: { class: true },
+      include: {
+        class: {
+          include: {
+            trainer: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     return classes.map((enrollment) => enrollment.class);
