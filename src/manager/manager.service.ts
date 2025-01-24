@@ -433,6 +433,45 @@ export class ManagerService {
       count: expiredSubscriptions.length,
     };
   }
+  async detachCustomerExpiredSubscription(customerId: string) {
+    const today = new Date();
+
+    // Fetch all expired subscriptions
+    const expiredSubscriptions =
+      await this.prisma.customerSubscription.findMany({
+        where: {
+          customerId: parseInt(customerId),
+          endDate: {
+            lt: today, // Find subscriptions that ended before today
+          },
+        },
+      });
+
+    // If no expired subscriptions found
+    if (expiredSubscriptions.length === 0) {
+      return {
+        message: 'No expired subscriptions found.',
+        count: 0,
+      };
+    }
+
+    // Detach customers from expired subscriptions
+    const deletionPromises = expiredSubscriptions.map((subscription) =>
+      this.prisma.customerSubscription.delete({
+        where: {
+          id: subscription.id,
+        },
+      }),
+    );
+
+    // Execute all deletions
+    await Promise.all(deletionPromises);
+
+    return {
+      message: 'Expired subscription detached successfully.',
+      count: expiredSubscriptions.length,
+    };
+  }
 
   async getExpiredSubscriptionsReport(): Promise<{
     message: string;

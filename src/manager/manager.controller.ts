@@ -148,6 +148,14 @@ export class ManagerController {
     return this.managerService.detachExpiredSubscriptions();
   }
 
+  @Delete('expired-subscriptions/:cusomerId')
+  @Roles(Role.MANAGER)
+  async detachCustomerExpiredSubscription(
+    @Param('cusomerId') customerId: string,
+  ) {
+    return this.managerService.detachCustomerExpiredSubscription(customerId);
+  }
+
   @Get('expired-subscriptions-report')
   @Roles(Role.MANAGER)
   async getExpiredSubscriptionsReport() {
