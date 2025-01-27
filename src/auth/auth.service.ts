@@ -19,6 +19,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.prisma.user.findUnique({ where: { email } });
+
     if (user && (await bcrypt.compare(password, user.password))) {
       const { password, ...result } = user;
       return result;
@@ -32,6 +33,7 @@ export class AuthService {
       accessToken: this.jwtService.sign(payload),
       ...payload,
       name: user.name,
+      photo: user.photo,
     };
   }
 
@@ -41,9 +43,11 @@ export class AuthService {
         credentials.email,
         credentials.password,
       );
+
       if (!user) {
         throw new UnauthorizedException('Invalid email or password');
       }
+      console.log('user : ', user);
 
       if (user.role == 'CUSTOMER') {
         const allInfo = await this.prisma.customer.findFirst({
@@ -75,8 +79,10 @@ export class AuthService {
           email: user.email,
           name: user.name,
           ...allInfo,
+          photo: user.photo,
         };
       }
+
       return this.generateToken(user);
     } catch (error) {
       console.log('error generating token');
@@ -121,6 +127,20 @@ export class AuthService {
     return this.prisma.user.update({
       where: { id: parseInt(userId) },
       data: { name: newName },
+    });
+  }
+
+  async updatePhoto(userId: string, photo: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: parseInt(userId) },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: { photo },
     });
   }
 

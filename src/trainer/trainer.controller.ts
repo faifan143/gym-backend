@@ -1,22 +1,24 @@
 import {
   Body,
   Controller,
-  Post,
-  Get,
-  Put,
-  Param,
-  UseGuards,
   Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
-import { TrainerService } from './trainer.service';
-import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { RoleGuard } from 'src/auth/guards/role.guard';
-import { Roles } from 'src/auth/decorators/role.decorator';
 import { Role } from '@prisma/client';
+import { Roles } from 'src/auth/decorators/role.decorator';
 import { User } from 'src/auth/decorators/user.decorator';
 import { JsonPayload } from 'src/auth/dto/jwtpayload.type';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { RoleGuard } from 'src/auth/guards/role.guard';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
+import { TrainerService } from './trainer.service';
+import { Response } from 'express';
 
 @Controller('trainer')
 @UseGuards(AuthGuard, RoleGuard)
@@ -95,6 +97,23 @@ export class TrainerController {
       parseInt(classId),
       scheduleId,
     );
+  }
+  @Get('class/:classId/attendance')
+  @Roles(Role.TRAINER)
+  async getClassAttendance(
+    @User() user: JsonPayload,
+    @Param('classId') classId: string,
+  ) {
+    return this.trainerService.getClassAttendance(user.id, parseInt(classId));
+  }
+
+  @Get('class/:classId/attendance/excel')
+  async getClassAttendanceExcel(
+    @Param('classId') classId: number,
+    @User() user: JsonPayload,
+    @Res() res: Response,
+  ) {
+    return this.trainerService.getClassAttendanceExcel(user.id, classId, res);
   }
 
   @Post('class/:classId/attendance/:scheduleId/customerId/:customerId')

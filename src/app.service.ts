@@ -15,7 +15,7 @@ export class AppService {
           id: true,
           name: true,
           email: true,
-          phone: true,
+          photo: true,
         },
       });
     } catch (error) {

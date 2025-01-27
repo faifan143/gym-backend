@@ -6,8 +6,11 @@ import {
   SubscriptionLevel,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { CloudinaryService } from '../src/shared/cloudinary.service';
 
 const prisma = new PrismaClient();
+const imagePath =
+  'E:/Projects Repository/Gym-Managment/server/gym-backend/prisma/placeholder.jpg';
 
 async function main() {
   await cleanDatabase();
@@ -22,6 +25,7 @@ async function main() {
   await seedCustomerSubscriptions(customers, subscriptions);
   await seedClassEnrollments(customers, classes);
   await seedPlanEnrollments(customers, nutritionPlans);
+  await addAttendanceForTrainer();
   console.log('تم إدخال البيانات بنجاح!');
 }
 
@@ -50,11 +54,16 @@ async function cleanDatabase() {
 }
 
 async function seedManager() {
+  const cloudinaryService = new CloudinaryService();
+
+  const imageUrl = await cloudinaryService.uploadImage(imagePath, 'photos');
+
   const managerUser = await prisma.user.create({
     data: {
       name: 'Manager User',
       email: 'manager@email.com',
       password: await bcrypt.hash('manager123', 10),
+      photo: imageUrl,
       role: Role.MANAGER,
     },
   });
@@ -131,56 +140,68 @@ async function seedSpecialties() {
 }
 
 async function seedTrainers(specialties) {
+  const cloudinaryService = new CloudinaryService();
+  const imageUrl = await cloudinaryService.uploadImage(imagePath, 'photos');
   const trainers = [
     {
       name: 'أحمد محمد الهاشمي',
       email: 'ahmed.h@gym.com',
       specialtyName: 'يوجا وتأمل',
+      photo: imageUrl,
     },
     {
       name: 'عمر خالد السعيد',
       email: 'omar.s@gym.com',
       specialtyName: 'تدريب القوة والأثقال',
+      photo: imageUrl,
     },
     {
       name: 'ياسر علي العمري',
       email: 'yasser.a@gym.com',
       specialtyName: 'اللياقة البدنية الشاملة',
+      photo: imageUrl,
     },
     {
       name: 'محمد سعيد النجار',
       email: 'mohamed.n@gym.com',
       specialtyName: 'تمارين كارديو متقدمة',
+      photo: imageUrl,
     },
     {
       name: 'خالد عمر الصباحي',
       email: 'khaled.s@gym.com',
       specialtyName: 'كروس فيت',
+      photo: imageUrl,
     },
     {
       name: 'طارق حسن المالكي',
       email: 'tarek.m@gym.com',
       specialtyName: 'تدريب رياضي شخصي',
+      photo: imageUrl,
     },
     {
       name: 'سعد محمود الشمري',
       email: 'saad.sh@gym.com',
       specialtyName: 'تدريب المرونة والتوازن',
+      photo: imageUrl,
     },
     {
       name: 'فيصل عبدالله القحطاني',
       email: 'faisal.q@gym.com',
       specialtyName: 'تدريب المبتدئين',
+      photo: imageUrl,
     },
     {
       name: 'بندر سلطان العتيبي',
       email: 'bandar.o@gym.com',
       specialtyName: 'تدريب كبار السن',
+      photo: imageUrl,
     },
     {
       name: 'ماجد فهد الدوسري',
       email: 'majed.d@gym.com',
       specialtyName: 'تدريب ما بعد الإصابات',
+      photo: imageUrl,
     },
     // Add more trainers with full names
   ];
@@ -193,7 +214,7 @@ async function seedTrainers(specialties) {
           email: trainer.email,
           password: await bcrypt.hash('trainer123', 10),
           role: Role.TRAINER,
-          phone: generateRandomPhone(),
+          photo: trainer.photo,
         },
       });
 
@@ -288,47 +309,247 @@ async function seedClasses(trainers) {
   return Promise.all(classes.map((cls) => prisma.class.create({ data: cls })));
 }
 
+async function seedCustomers() {
+  const cloudinaryService = new CloudinaryService();
+  const imageUrl = await cloudinaryService.uploadImage(imagePath, 'photos');
+  // قائمة بالأسماء العربية الشائعة
+  const firstNames = [
+    'محمد',
+    'أحمد',
+    'عبدالله',
+    'خالد',
+    'عمر',
+    'سعد',
+    'فهد',
+    'إبراهيم',
+    'عبدالرحمن',
+    'سلطان',
+    'نورة',
+    'سارة',
+    'ريم',
+    'منى',
+    'هند',
+    'لينا',
+    'دانة',
+    'عبير',
+    'رنا',
+    'أمل',
+  ];
+
+  const lastNames = [
+    'الهاشمي',
+    'السعيد',
+    'العمري',
+    'النجار',
+    'الصباحي',
+    'المالكي',
+    'الشمري',
+    'القحطاني',
+    'العتيبي',
+    'الغامدي',
+    'الزهراني',
+    'البلوي',
+    'العمري',
+    'القرني',
+    'السبيعي',
+    'المطيري',
+    'الشهري',
+    'الدوسري',
+  ];
+
+  const customers = [];
+  for (let i = 0; i < 100; i++) {
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    const fullName = `${firstName} ${lastName}`;
+
+    customers.push({
+      name: fullName,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${Math.floor(Math.random() * 999)}@example.com`,
+    });
+  }
+
+  return Promise.all(
+    customers.map(async (customer) => {
+      const user = await prisma.user.create({
+        data: {
+          name: customer.name,
+          email: customer.email,
+          password: await bcrypt.hash('customer123', 10),
+          role: Role.CUSTOMER,
+          photo: imageUrl,
+        },
+      });
+
+      return prisma.customer.create({
+        data: {
+          user: { connect: { id: user.id } },
+        },
+      });
+    }),
+  );
+}
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+async function seedCustomerSubscriptions(customers, subscriptions) {
+  const currentDate = new Date();
+  const customerSubs = customers.map((customer) => {
+    const subscription =
+      subscriptions[Math.floor(Math.random() * subscriptions.length)];
+    const startDate = new Date(currentDate);
+    const endDate = new Date(startDate);
+
+    // Add months based on subscription duration
+    switch (subscription.duration) {
+      case SubscriptionDuration.MONTHLY:
+        endDate.setMonth(endDate.getMonth() + 1);
+        break;
+      case SubscriptionDuration.QUARTERLY:
+        endDate.setMonth(endDate.getMonth() + 3);
+        break;
+      case SubscriptionDuration.ANNUAL:
+        endDate.setMonth(endDate.getMonth() + 12);
+        break;
+    }
+
+    return {
+      customerId: customer.id,
+      subscriptionId: subscription.id,
+      startDate,
+      endDate,
+    };
+  });
+
+  return Promise.all(
+    customerSubs.map((sub) =>
+      prisma.customerSubscription.create({ data: sub }),
+    ),
+  );
+}
+
+async function seedClassEnrollments(customers, classes) {
+  const enrollments = [];
+  for (const customer of customers) {
+    // Enroll each customer in 1-3 random classes
+    const numEnrollments = Math.floor(Math.random() * 3) + 1;
+    const selectedClasses = shuffleArray([...classes]).slice(0, numEnrollments);
+
+    for (const cls of selectedClasses) {
+      enrollments.push({
+        customerId: customer.id,
+        classId: cls.id,
+      });
+    }
+  }
+
+  return Promise.all(
+    enrollments.map((enrollment) =>
+      prisma.customerClass.create({ data: enrollment }),
+    ),
+  );
+}
+
+async function addAttendanceForTrainer() {
+  // Fetch the first trainer with userId 2
+  const trainer = await prisma.trainer.findUnique({
+    where: {
+      userId: 2,
+    },
+    include: {
+      classes: true, // include associated classes
+    },
+  });
+
+  if (!trainer || trainer.classes.length === 0) {
+    console.log('Trainer not found or no classes available');
+    return;
+  }
+
+  // Select a class from the trainer's classes
+  const trainerClass = trainer.classes[0]; // Pick the first class
+
+  // Fetch a customer to assign attendance to
+  const customer = await prisma.customer.findFirst(); // Picking the first customer for simplicity
+
+  if (!customer) {
+    console.log('No customer found');
+    return;
+  }
+
+  // Generate a unique schedule ID for this class
+  const scheduleId = `${trainerClass.id}-${new Date().getTime()}`;
+
+  // Create an attendance record
+  const attendance = await prisma.attendance.create({
+    data: {
+      customerId: customer.id,
+      classId: trainerClass.id,
+      scheduleId: scheduleId, // Unique ID based on the class and time
+      attendedAt: new Date(), // The current timestamp
+    },
+  });
+
+  console.log('Attendance added successfully:', attendance);
+}
+
 async function seedNutritionists(specialties) {
+  const cloudinaryService = new CloudinaryService();
+  const imageUrl = await cloudinaryService.uploadImage(imagePath, 'photos');
   const nutritionists = [
     {
       name: 'سارة أحمد الغامدي',
       email: 'sara.g@gym.com',
       specialtyName: 'تغذية رياضيي القوة',
+      photo: imageUrl,
     },
     {
       name: 'ريم محمد الزهراني',
       email: 'reem.z@gym.com',
       specialtyName: 'إدارة الوزن والسمنة',
+      photo: imageUrl,
     },
     {
       name: 'نور علي البلوي',
       email: 'nour.b@gym.com',
       specialtyName: 'تغذية علاجية',
+      photo: imageUrl,
     },
     {
       name: 'منى حسن العمري',
       email: 'mona.o@gym.com',
       specialtyName: 'تغذية نباتية',
+      photo: imageUrl,
     },
     {
       name: 'لينا سعيد القرني',
       email: 'lina.q@gym.com',
       specialtyName: 'تغذية مرضى السكري',
+      photo: imageUrl,
     },
     {
       name: 'دانة فهد السبيعي',
       email: 'dana.s@gym.com',
       specialtyName: 'تغذية رياضيي التحمل',
+      photo: imageUrl,
     },
     {
       name: 'عبير خالد المطيري',
       email: 'abeer.m@gym.com',
       specialtyName: 'تغذية ما بعد العمليات',
+      photo: imageUrl,
     },
     {
       name: 'هند سلطان الشهري',
       email: 'hind.sh@gym.com',
       specialtyName: 'تغذية الحوامل والمرضعات',
+      photo: imageUrl,
     },
     // Add more nutritionists
   ];
@@ -341,7 +562,7 @@ async function seedNutritionists(specialties) {
           email: nutritionist.email,
           password: await bcrypt.hash('nutrition123', 10),
           role: Role.NUTRITIONIST,
-          phone: generateRandomPhone(),
+          photo: nutritionist.photo,
         },
       });
 
@@ -542,161 +763,6 @@ async function seedNutritionPlans(nutritionists) {
     plans.map((plan) => prisma.nutritionPlan.create({ data: plan })),
   );
 }
-
-async function seedCustomers() {
-  // قائمة بالأسماء العربية الشائعة
-  const firstNames = [
-    'محمد',
-    'أحمد',
-    'عبدالله',
-    'خالد',
-    'عمر',
-    'سعد',
-    'فهد',
-    'إبراهيم',
-    'عبدالرحمن',
-    'سلطان',
-    'نورة',
-    'سارة',
-    'ريم',
-    'منى',
-    'هند',
-    'لينا',
-    'دانة',
-    'عبير',
-    'رنا',
-    'أمل',
-  ];
-
-  const lastNames = [
-    'الهاشمي',
-    'السعيد',
-    'العمري',
-    'النجار',
-    'الصباحي',
-    'المالكي',
-    'الشمري',
-    'القحطاني',
-    'العتيبي',
-    'الغامدي',
-    'الزهراني',
-    'البلوي',
-    'العمري',
-    'القرني',
-    'السبيعي',
-    'المطيري',
-    'الشهري',
-    'الدوسري',
-  ];
-
-  const customers = [];
-  for (let i = 0; i < 100; i++) {
-    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-    const fullName = `${firstName} ${lastName}`;
-
-    customers.push({
-      name: fullName,
-      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${Math.floor(Math.random() * 999)}@example.com`,
-      phone: generateRandomPhone(),
-    });
-  }
-
-  return Promise.all(
-    customers.map(async (customer) => {
-      const user = await prisma.user.create({
-        data: {
-          name: customer.name,
-          email: customer.email,
-          password: await bcrypt.hash('customer123', 10),
-          role: Role.CUSTOMER,
-          phone: customer.phone,
-        },
-      });
-
-      return prisma.customer.create({
-        data: {
-          user: { connect: { id: user.id } },
-        },
-      });
-    }),
-  );
-}
-
-function generateRandomPhone() {
-  // Generate Saudi phone number format
-  const prefixes = ['050', '054', '055', '056', '058', '059'];
-  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-  const number = Math.floor(Math.random() * 90000000) + 10000000;
-  return `${prefix}${number}`;
-}
-
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
-async function seedCustomerSubscriptions(customers, subscriptions) {
-  const currentDate = new Date();
-  const customerSubs = customers.map((customer) => {
-    const subscription =
-      subscriptions[Math.floor(Math.random() * subscriptions.length)];
-    const startDate = new Date(currentDate);
-    const endDate = new Date(startDate);
-
-    // Add months based on subscription duration
-    switch (subscription.duration) {
-      case SubscriptionDuration.MONTHLY:
-        endDate.setMonth(endDate.getMonth() + 1);
-        break;
-      case SubscriptionDuration.QUARTERLY:
-        endDate.setMonth(endDate.getMonth() + 3);
-        break;
-      case SubscriptionDuration.ANNUAL:
-        endDate.setMonth(endDate.getMonth() + 12);
-        break;
-    }
-
-    return {
-      customerId: customer.id,
-      subscriptionId: subscription.id,
-      startDate,
-      endDate,
-    };
-  });
-
-  return Promise.all(
-    customerSubs.map((sub) =>
-      prisma.customerSubscription.create({ data: sub }),
-    ),
-  );
-}
-
-async function seedClassEnrollments(customers, classes) {
-  const enrollments = [];
-  for (const customer of customers) {
-    // Enroll each customer in 1-3 random classes
-    const numEnrollments = Math.floor(Math.random() * 3) + 1;
-    const selectedClasses = shuffleArray([...classes]).slice(0, numEnrollments);
-
-    for (const cls of selectedClasses) {
-      enrollments.push({
-        customerId: customer.id,
-        classId: cls.id,
-      });
-    }
-  }
-
-  return Promise.all(
-    enrollments.map((enrollment) =>
-      prisma.customerClass.create({ data: enrollment }),
-    ),
-  );
-}
-
 async function seedPlanEnrollments(customers, plans) {
   const enrollments = [];
   for (const customer of customers) {

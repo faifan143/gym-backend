@@ -9,10 +9,18 @@ import { TrainerModule } from './trainer/trainer.module';
 import { TrainerController } from './trainer/trainer.controller';
 import { NutritionistModule } from './nutritionist/nutritionist.module';
 import { CustomerModule } from './customer/customer.module';
+import { CloudinaryService } from './shared/cloudinary.service';
 
 @Module({
-  imports: [ManagerModule, AuthModule, TrainerModule, NutritionistModule, CustomerModule],
+  imports: [
+    ManagerModule,
+    AuthModule,
+    TrainerModule,
+    NutritionistModule,
+    CustomerModule,
+  ],
   controllers: [AppController, TrainerController],
-  providers: [AppService, PrismaService, TrainerService],
+  providers: [AppService, PrismaService, TrainerService, CloudinaryService],
+  exports: [CloudinaryService],
 })
 export class AppModule {}

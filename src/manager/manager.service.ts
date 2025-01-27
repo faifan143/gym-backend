@@ -11,10 +11,16 @@ import { CreateSubscriptionPlanDto } from './dto/create-subscription-plan.dto';
 import { UpdateTrainerDto } from './dto/update-trainer.dto';
 import { UpdateNutritionistDto } from './dto/update-nutritionist.dto';
 import { UpdateSubscriptionPlanDto } from './dto/update-subscription-plan.dto';
+import { CloudinaryService } from 'src/shared/cloudinary.service';
+const imagePath =
+  'E:/Projects Repository/Gym-Managment/server/gym-backend/prisma/placeholder.jpg';
 
 @Injectable()
 export class ManagerService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cloudinary: CloudinaryService,
+  ) {}
 
   async createTrainer(data: CreateTrainerDto) {
     const existingUser = await this.prisma.user.findUnique({
@@ -24,14 +30,16 @@ export class ManagerService {
     if (existingUser) {
       throw new BadRequestException('A user with this email already exists.');
     }
+    const cloudinaryService = new CloudinaryService();
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
-
+    const photo = await this.cloudinary.uploadImage(imagePath, 'photos');
     const user = await this.prisma.user.create({
       data: {
         name: data.name,
         email: data.email,
         password: hashedPassword,
+        photo,
         role: 'TRAINER',
         trainer: {
           create: {
@@ -143,12 +151,14 @@ export class ManagerService {
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
+    const photo = await this.cloudinary.uploadImage(imagePath, 'photos');
 
     const user = await this.prisma.user.create({
       data: {
         name: data.name,
         email: data.email,
         password: hashedPassword,
+        photo,
         role: 'NUTRITIONIST',
         nutritionist: {
           create: {
