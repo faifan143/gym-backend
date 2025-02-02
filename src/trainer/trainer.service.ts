@@ -104,6 +104,8 @@ export class TrainerService {
             customer: {
               include: {
                 user: true,
+                attendedClasses: true,
+                subscriptions: true,
               },
             },
           },

@@ -74,6 +74,7 @@ export class NutritionistService {
           include: {
             customer: {
               include: {
+                subscriptions: true,
                 user: true,
               },
             },
@@ -127,6 +128,7 @@ export class NutritionistService {
           include: {
             customer: {
               include: {
+                subscriptions: true,
                 user: true,
               },
             },
